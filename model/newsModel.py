@@ -1,16 +1,14 @@
-from typing import Optional
-
-
-
 class News:
-    def __init__(self, time: str, currency: str, description: str):
-        self.time = time
-        self.currency = currency
-        self.description = description
+    def __init__(self, date: str, country: str, title: str, impact: str):
+        self.date = date
+        self.country = country
+        self.title = title
+        self.impact = impact
 
     def to_dict(self):
         return {
-            'time': self.time,
-            'currency': self.currency,
-            'description': self.description,
+            'date': self.date,
+            'country': self.country,
+            'title': self.title,
+            'impact': self.impact,
         }
