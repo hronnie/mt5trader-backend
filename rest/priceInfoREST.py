@@ -2,7 +2,6 @@ import re
 from flask import Blueprint, request, jsonify
 from dao.platformDAOFactory import DAOFactory
 
-
 price_info_blueprint = Blueprint('price_info_blueprint', __name__)
 
 

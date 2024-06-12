@@ -1,7 +1,7 @@
 
 
 class PriceInfo:
-    def __init__(self, bidPrice: str, askPrice: str, spread: str):
+    def __init__(self, bidPrice: float, askPrice: float, spread: float):
         self.bidPrice = bidPrice
         self.askPrice = askPrice
         self.spread = spread
