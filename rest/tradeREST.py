@@ -1,6 +1,6 @@
 import re
 from flask import Blueprint, request, jsonify
-from dao.platformDAOFactory import DAOFactory
+from dao.mt5DAO import Mt5DAO
 from service.tradeService import TradeService
 from model.tradeResultModel import TradeResult
 import datetime
@@ -16,7 +16,26 @@ def trade_long(symbol: str, platform = 'mt5') -> TradeResult:
     slPrice = params.get('slPrice', '')
     tpPrice = params.get('tpPrice', '')
     entryPrice = params.get('entryPrice', '')
-    trade_result = TradeService.createLongOrder(symbol, slPrice, tpPrice, entryPrice)
+    ratio = params.get('ratio', '')
+    spread = params.get('spread', '')
+    risk = params.get('risk', )
+    price_info = Mt5DAO.getCurrentPriceInfo(symbol)
+    if price_info.spread > spread: 
+        trade_result = TradeResult(
+        executionDate=None,
+        volume=None,
+        entryPrice=None,
+        comment='Spread violation',
+        symbol=None,
+        slPrice=None,
+        tpPrice=None,
+        moneyAtRisk=None,
+        tpPipValue=None,
+        slPipValue=None,
+        spread=price_info.spread)
+    else: 
+        trade_result = TradeService.createLongOrder(symbol, slPrice, tpPrice, entryPrice, ratio, spread, risk)
+
     return jsonify(trade_result.to_dict()), 200
 
 
@@ -27,6 +46,25 @@ def trade_short(symbol: str, platform = 'mt5') -> TradeResult:
     slPrice = params.get('slPrice', '')
     tpPrice = params.get('tpPrice', '')
     entryPrice = params.get('entryPrice', '')
-    trade_result = TradeService.createShortOrder(symbol, slPrice, tpPrice, entryPrice)
+    ratio = params.get('ratio', '')
+    spread = params.get('spread', '')
+    risk = params.get('risk', )
+    price_info = Mt5DAO.getCurrentPriceInfo(symbol)
+    if price_info.spread > spread: 
+        trade_result = TradeResult(
+        executionDate=None,
+        volume=None,
+        entryPrice=None,
+        comment='Spread violation',
+        symbol=None,
+        slPrice=None,
+        tpPrice=None,
+        moneyAtRisk=None,
+        tpPipValue=None,
+        slPipValue=None,
+        spread=price_info.spread)
+    else: 
+        trade_result = TradeService.createShortOrder(symbol, slPrice, tpPrice, entryPrice, ratio, spread, risk)
+        
     return jsonify(trade_result.to_dict()), 200
 
