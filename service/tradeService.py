@@ -6,34 +6,26 @@ class TradeService:
 
    
     @classmethod
-    def createLongOrder(self, symbolName, slPrice, tpPrice, entryPrice, ratio, spread, risk) -> TradeResult:
-        # TODO: implement real mt5 connector
+    def createLongOrder(self, symbolName, slPrice, tpPrice, entryPrice, ratio, risk) -> TradeResult:
         volume, change_per_pip, money_at_risk = TradeService.calculate_lot_size( 
                                                             risk_percentage=risk, 
                                                             stop_loss=slPrice, 
                                                             symbol=symbolName, is_buy_input=True)
         
+        print(f"Volume {volume}, Change per pip: {change_per_pip}, Money at risk: {money_at_risk}")
+        order_result = Mt5DAO.create_mt5_order(volume, symbolName, True, slPrice, ratio, entryPrice, tpPrice)
+        tp_pip = Mt5DAO.get_exit_price_pip(symbolName, order_result.entryPrice, order_result.tpPrice)
+        sl_pip = Mt5DAO.get_exit_price_pip(symbolName, order_result.entryPrice, order_result.slPrice)
 
-        # slPrice only => 
-
-        long_order = TradeResult(
-            executionDate=datetime.datetime.now(),
-            volume=1.1,  # 100k units (standard lot)
-            entryPrice=1.2000,
-            comment="Request executed",
-            symbol="EURUSD",
-            slPrice=1.1900,
-            tpPrice=1.2100,
-            moneyAtRisk=100,  
-            tpPipValue=15,  
-            slPipValue=3,  
-            spread=0.00005
-        )
-        return long_order
+        order_result.tpPipValue = tp_pip
+        order_result.slPipValue = sl_pip
+        order_result.moneyAtRisk = money_at_risk      
+        
+        return order_result
 
 
     @classmethod
-    def createShortOrder(self, symbolName, slPrice, tpPrice, entryPrice, ratio, spread, risk) -> TradeResult:
+    def createShortOrder(self, symbolName, slPrice, tpPrice, entryPrice, ratio, risk) -> TradeResult:
         
         volume, change_per_pip, money_at_risk = TradeService.calculate_lot_size( 
                                                             risk_percentage=risk, 
@@ -43,24 +35,14 @@ class TradeService:
         print(f"Volume {volume}, Change per pip: {change_per_pip}, Money at risk: {money_at_risk}")
         order_result = Mt5DAO.create_mt5_order(volume, symbolName, False, slPrice, ratio, entryPrice, tpPrice)
         print(order_result)
-        tp_pip = Mt5DAO.get_exit_price_pip(symbolName, order_result.price, order_result.tp)
-        sl_pip = Mt5DAO.get_exit_price_pip(symbolName, order_result.price, order_result.sl)
+        tp_pip = Mt5DAO.get_exit_price_pip(symbolName, order_result.entryPrice, order_result.tpPrice)
+        sl_pip = Mt5DAO.get_exit_price_pip(symbolName, order_result.entryPrice, order_result.slPrice)
 
-        # TODO: implement real mt5 connector
-        short_order = TradeResult(
-        executionDate=datetime.datetime.now(),
-        volume=volume,  
-        entryPrice=order_result.price,
-        comment=order_result.comment,
-        symbol=symbolName,
-        slPrice=order_result.sl,
-        tpPrice=order_result.tp,
-        moneyAtRisk=money_at_risk, 
-        tpPipValue=tp_pip,  
-        slPipValue=sl_pip, 
-        spread=order_result.bid - order_result.ask
-        )
-        return short_order
+        order_result.tpPipValue = tp_pip
+        order_result.slPipValue = sl_pip
+        order_result.moneyAtRisk = money_at_risk      
+        
+        return order_result
     
     
     

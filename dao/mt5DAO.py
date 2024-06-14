@@ -1,5 +1,8 @@
 from model.priceInfoModel import PriceInfo
 import MetaTrader5 as mt5
+from model.tradeResultModel import TradeResult
+import datetime
+
 
 class Mt5DAO:
 
@@ -34,7 +37,7 @@ class Mt5DAO:
         return account.balance
     
     @classmethod
-    def create_mt5_order(self, lot_size, symbol, is_buy: bool, sl_price, ratio, stop_limit_price = None, tp_price_input = None):
+    def create_mt5_order(self, lot_size, symbol, is_buy: bool, sl_price, ratio, entry_price_input = None, tp_price_input = None) -> TradeResult:
         mt5.initialize()
 
         point = mt5.symbol_info(symbol).point
@@ -45,8 +48,8 @@ class Mt5DAO:
             entry_price = price_info.bidPrice
 
         action = mt5.SYMBOL_TRADE_EXECUTION_MARKET
-        if stop_limit_price != None:
-            entry_price = stop_limit_price
+        if entry_price_input != None and entry_price_input != 0:
+            entry_price = entry_price_input
             action = mt5.TRADE_ACTION_PENDING
         
         one_pip = 10 * point
@@ -62,12 +65,12 @@ class Mt5DAO:
             type = mt5.ORDER_TYPE_SELL
             tp_price = entry_price - sl_pips * one_pip * ratio
 
-        if tp_price_input is not None: 
+        if tp_price_input is not None and tp_price_input != 0: 
             tp_price = tp_price_input
 
-        if is_buy and stop_limit_price != None:
+        if is_buy and entry_price_input != None and entry_price_input != 0:
             type = mt5.ORDER_TYPE_BUY_STOP_LIMIT
-        if is_buy != True and stop_limit_price != None: 
+        if is_buy != True and entry_price_input != None and entry_price_input != 0: 
             type = mt5.ORDER_TYPE_SELL_STOP_LIMIT
         
 
@@ -88,13 +91,34 @@ class Mt5DAO:
             "type_filling": mt5.ORDER_FILLING_IOC,
         }
 
+
+
         result = mt5.order_send(request)
+        result_order = TradeResult(
+            executionDate=datetime.datetime.now(),
+            volume=lot_size,  
+            entryPrice=entry_price,
+            comment=result.comment,
+            symbol=symbol,
+            slPrice=sl_price,
+            tpPrice=tp_price,
+            moneyAtRisk=None, 
+            tpPipValue=None,  
+            slPipValue=None, 
+            spread=abs(result.ask - result.bid)
+            )
+        print("order creation result")
         print(result)
-        return result
+        print("TradeResult:")
+        print(result_order)
+        print('-------end ----')
+        return result_order
     
     @classmethod
-    def get_exit_price_pip(symbol_name, entry, exit):
+    def get_exit_price_pip(self, symbol_name, entry, exit):
         mt5.initialize()
-        point = mt5.symbol_info(symbol_name).point
+        point = mt5.symbol_info(symbol_name).point * 10
+        
         diff = abs(exit - entry)
+        print(f"point: {point}, diff: {abs(exit - entry)}, result: {round(diff / point, 2)}")
         return round(diff / point, 2)

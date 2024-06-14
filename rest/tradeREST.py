@@ -34,7 +34,7 @@ def trade_long(symbol: str, platform = 'mt5') -> TradeResult:
         slPipValue=None,
         spread=price_info.spread)
     else: 
-        trade_result = TradeService.createLongOrder(symbol, slPrice, tpPrice, entryPrice, ratio, spread, risk)
+        trade_result = TradeService.createLongOrder(symbol, slPrice, tpPrice, entryPrice, ratio, risk)
 
     return jsonify(trade_result.to_dict()), 200
 
@@ -64,7 +64,7 @@ def trade_short(symbol: str, platform = 'mt5') -> TradeResult:
         slPipValue=None,
         spread=price_info.spread)
     else: 
-        trade_result = TradeService.createShortOrder(symbol, slPrice, tpPrice, entryPrice, ratio, spread, risk)
+        trade_result = TradeService.createShortOrder(symbol, slPrice, tpPrice, entryPrice, ratio, risk)
         
     return jsonify(trade_result.to_dict()), 200
 
