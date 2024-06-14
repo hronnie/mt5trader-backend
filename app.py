@@ -12,7 +12,7 @@ CORS(app)
 # Set up logging
 if not app.debug:
     # Create a file handler object
-    file_handler = RotatingFileHandler('app.log', maxBytes=10240, backupCount=10)
+    file_handler = RotatingFileHandler('app2.log', maxBytes=10240, backupCount=10)
     
     # Set the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     file_handler.setLevel(logging.INFO)
@@ -35,8 +35,8 @@ if not app.debug:
     app.logger.addHandler(console_handler)
     
     # Add the same handlers to the custom loggers
-    logger = logging.getLogger('price_info')
-    logger.addHandler(file_handler)
+    logger = logging.getLogger('logger_info')
+    #logger.addHandler(file_handler)
     logger.addHandler(console_handler)
     logger.setLevel(logging.INFO)
 

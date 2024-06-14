@@ -4,14 +4,16 @@ import re
 from dao.platformDAOFactory import DAOFactory
 
 # Set up the logger
-logger = logging.getLogger('price_info')
+logger = logging.getLogger('logger_info')
 
 price_info_blueprint = Blueprint('price_info_blueprint', __name__)
 
 @price_info_blueprint.route('/price/<string:symbol>', methods=['GET'])
 def get_symbol_news(symbol: str, platform='mt5'):
     '''Get price info for a symbol'''
+    logger.info('-----------------------------------------------------------------')
     logger.info(f"Received request for price info of symbol: {symbol} on platform: {platform}")
+    logger.info('-----------------------------------------------------------------')
     
     try:
         price_dao = DAOFactory.getDAO(platform)
