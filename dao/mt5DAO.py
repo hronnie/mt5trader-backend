@@ -86,9 +86,15 @@ class Mt5DAO:
             tp_price = tp_price_input
 
         if is_buy and entry_price_input is not None and entry_price_input != 0:
-            type = mt5.ORDER_TYPE_BUY_STOP_LIMIT
+            if entry_price > price_info.bidPrice: 
+                type = mt5.ORDER_TYPE_BUY_STOP_LIMIT
+            else:     
+                type = mt5.ORDER_TYPE_BUY_LIMIT
         if not is_buy and entry_price_input is not None and entry_price_input != 0: 
-            type = mt5.ORDER_TYPE_SELL_STOP_LIMIT
+            if entry_price < price_info.askPrice: 
+                type = mt5.ORDER_TYPE_SELL_STOP_LIMIT
+            else:     
+                type = mt5.ORDER_TYPE_SELL_LIMIT
 
         deviation = 20
 
