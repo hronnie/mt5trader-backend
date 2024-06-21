@@ -185,4 +185,71 @@ class Mt5DAO:
                 positions_list.append(position)
         
         return positions_list
-            
+                
+    @classmethod
+    def close_position_by_ticket(cls, ticket: int) -> TradeResult:
+        logger.info('-----------------------------------------------------------------')
+        logger.info('Entered close_position_by_ticket')
+        logger.info('-----------------------------------------------------------------')
+        logger.info(f'Input parameters: ticket={ticket}')
+        
+        mt5.initialize()
+        
+        # Retrieve the position to close
+        positions = mt5.positions_get(ticket=ticket)
+        
+        if positions is None or len(positions) == 0:
+            logger.info(f"No position found with ticket={ticket}, error code={mt5.last_error()}")
+            return None
+        
+        position = positions[0]
+        
+        # Determine close order parameters
+        symbol = position.symbol
+        volume = position.volume
+        order_type = mt5.ORDER_TYPE_SELL if position.type == mt5.ORDER_TYPE_BUY else mt5.ORDER_TYPE_BUY
+        price = mt5.symbol_info_tick(symbol).bid if position.type == mt5.ORDER_TYPE_BUY else mt5.symbol_info_tick(symbol).ask
+        
+        # Prepare the close request
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": volume,
+            "type": order_type,
+            "position": ticket,
+            "price": price,
+            "deviation": 20,
+            "magic": 234000,
+            "comment": "Close position",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+        
+        logger.info(f'Close request: {request}')
+        
+        # Send the close request
+        result = mt5.order_send(request)
+        
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            logger.info(f"Failed to close position, retcode={result.retcode}")
+            return None
+        
+        # Create TradeResult for the closed position
+        result_order = TradeResult(
+            executionDate=datetime.now(),
+            volume=volume,
+            entryPrice=position.price_open,
+            comment=result.comment,
+            symbol=symbol,
+            slPrice=position.sl,
+            tpPrice=position.tp,
+            moneyAtRisk=None,
+            tpPipValue=None,
+            slPipValue=None,
+            spread=cls.get_pip_diff(symbol, result.price, position.price_open)
+        )
+        
+        logger.info("Close position result: %s", result)
+        logger.info("TradeResult: %s", result_order)
+        
+        return result_order    
