@@ -3,7 +3,7 @@ from model.priceInfoModel import PriceInfo
 import MetaTrader5 as mt5
 from model.tradeResultModel import TradeResult
 from model.positionModel import TradePosition
-import datetime
+from datetime import datetime
 
 logger = logging.getLogger('logger_info')
 
@@ -158,10 +158,13 @@ class Mt5DAO:
 
 
     @classmethod
-    def get_positions(cls, symbol: str) -> list['TradePosition']:
+    def get_positions(cls) -> list['TradePosition']:
+        logger.info('-----------------------------------------------------------------')
+        logger.info('Entered get_positions')
+        logger.info('-----------------------------------------------------------------')
         positions_list = []
         mt5.initialize()
-        positions = mt5.positions_get(symbol=symbol)
+        positions = mt5.positions_get()
 
         if positions is None:
             return positions_list

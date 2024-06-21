@@ -1,16 +1,14 @@
-from datetime import datetime
 
 class TradePosition:
     ORDER_TYPES = {
-        0: "Market buy order",
-        1: "Market sell order",
-        2: "Buy Limit pending order",
-        3: "Sell Limit pending order",
-        4: "Buy Stop pending order",
-        5: "Sell Stop pending order",
-        6: "Buy Stop Limit order",
-        7: "Sell Stop Limit order",
-        8: "Order for closing a position by an opposite one"
+        0: "Market Buy",
+        1: "Market Sell",
+        2: "Buy Limit",
+        3: "Sell Limit",
+        4: "Buy Stop",
+        5: "Sell Stop",
+        6: "Buy Stop",
+        7: "Sell Stop",
     }
 
     def __init__(self, symbol: str, ticket: int, time: str, type: int, volume: float, price: float, sl: float, tp: float, current_price: float, profit: float):
