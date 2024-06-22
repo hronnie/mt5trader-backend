@@ -35,7 +35,9 @@ def close_position(ticket: int) -> TradeResult:
     try:
         close_result = Mt5DAO.close_position_by_ticket(ticket)
         logger.info(f'Result: {close_result}')
+        if close_result is None: 
+            return jsonify({"Close was not successful"}), 500
         return jsonify(close_result.to_dict()), 200
     except Exception as e:
-        logger.error(f'Error in get_all_position: {str(e)}')
+        logger.error(f'Error in close_position: {str(e)}')
         return jsonify({"error": str(e)}), 500

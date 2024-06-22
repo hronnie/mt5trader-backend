@@ -46,5 +46,6 @@ app.register_blueprint(price_info_blueprint, url_prefix='/api')
 app.register_blueprint(trade_blueprint, url_prefix='/api')
 app.register_blueprint(position_blueprint, url_prefix='/api')
 
-if __name__ == '__main__':
-    app.run(debug=True)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)

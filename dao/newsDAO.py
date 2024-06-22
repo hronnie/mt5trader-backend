@@ -52,11 +52,16 @@ class NewsDAO:
         logger.info(f'Input parameters: symbolName={symbolName}')
         
         news_data = cls.fetch_json()
-        symbol1 = symbolName[:3]
-        symbol2 = symbolName[3:]
-        filtered_news_symbol1 = cls.filter_news_by_date_and_country(news_data, symbol1)
-        filtered_news_symbol2 = cls.filter_news_by_date_and_country(news_data, symbol2)
-        filtered_news = filtered_news_symbol1 + [news for news in filtered_news_symbol2 if news not in filtered_news_symbol1]
 
-        logger.info(f'Result: {filtered_news}')
-        return filtered_news
+        if symbolName != "ALL": 
+            symbol1 = symbolName[:3]
+            symbol2 = symbolName[3:]
+            filtered_news_symbol1 = cls.filter_news_by_date_and_country(news_data, symbol1)
+            filtered_news_symbol2 = cls.filter_news_by_date_and_country(news_data, symbol2)
+            result = filtered_news_symbol1 + [news for news in filtered_news_symbol2 if news not in filtered_news_symbol1]
+        else: 
+            result = news_data
+        
+
+        logger.info(f'Result: {result}')
+        return result
