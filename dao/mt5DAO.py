@@ -132,7 +132,7 @@ class Mt5DAO:
 
         result = mt5.order_send(request)
         result_order = TradeResult(
-            executionDate=datetime.datetime.now(),
+            executionDate=datetime.now(),
             volume=lot_size,  
             entryPrice=entry_price,
             comment=result.comment,
@@ -267,3 +267,58 @@ class Mt5DAO:
         logger.info("TradeResult: %s", result_order)
         
         return result_order    
+    
+    @classmethod
+    def modify_position_by_ticket(cls, ticket: int, sl: float, tp: float) -> TradeResult:
+        logger.info('-----------------------------------------------------------------')
+        logger.info('Entered modify_position_by_ticket')
+        logger.info('-----------------------------------------------------------------')
+        logger.info(f'Input parameters: ticket={ticket}, sl={sl}, tp={tp}')
+        
+        mt5.initialize()
+        
+        positions = mt5.positions_get(ticket=ticket)
+        
+        if positions is None or len(positions) == 0:
+            logger.info(f"No position found with ticket={ticket}, error code={mt5.last_error()}")
+            return None
+        
+        position = positions[0]
+        
+        # Prepare the modification request
+        request = {
+            "action": mt5.TRADE_ACTION_SLTP,
+            "symbol": position.symbol,
+            "position": ticket,
+            "sl": sl,
+            "tp": tp,
+        }
+        
+        logger.info(f'Modify request: {request}')
+        
+        # Send the modification request
+        result = mt5.order_send(request)
+        
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            logger.info(f"Failed to modify position, retcode={result.retcode}")
+            return None
+        
+        # Create TradeResult for the modified position
+        result_order = TradeResult(
+            executionDate=datetime.now(),
+            volume=position.volume,
+            entryPrice=position.price_open,
+            comment=result.comment,
+            symbol=position.symbol,
+            slPrice=sl,
+            tpPrice=tp,
+            moneyAtRisk=None,
+            tpPipValue=None,
+            slPipValue=None,
+            spread=None
+        )
+        
+        logger.info("Modify position result: %s", result)
+        logger.info("TradeResult: %s", result_order)
+        
+        return result_order

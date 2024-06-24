@@ -1,5 +1,5 @@
 import re
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from dao.mt5DAO import Mt5DAO
 from model.positionModel import TradePosition
 from model.tradeResultModel import TradeResult
@@ -30,14 +30,37 @@ def close_position(ticket: int) -> TradeResult:
     logger.info('-----------------------------------------------------------------')
     logger.info('Entered close_position')
     logger.info('-----------------------------------------------------------------')
+    logger.info(f'Input: ticket: {ticket}')
 
     
     try:
         close_result = Mt5DAO.close_position_by_ticket(ticket)
-        logger.info(f'Result: {close_result}')
+        logger.info(f'Result: {close_result.to_dict()}')
         if close_result is None: 
             return jsonify({"Close was not successful"}), 500
         return jsonify(close_result.to_dict()), 200
     except Exception as e:
         logger.error(f'Error in close_position: {str(e)}')
         return jsonify({"error": str(e)}), 500
+
+@position_blueprint.route('/position/modify/<int:ticket>', methods=['POST'])
+def modify_exit_orders(ticket: int) -> TradeResult:
+    '''Modifies SL and/or TP'''
+    logger.info('-----------------------------------------------------------------')
+    logger.info('Entered modify_exit_orders')
+    logger.info('-----------------------------------------------------------------')
+    
+    params = request.get_json()
+    logger.info(f'Input parameters: symbol={ticket}, params={params}')
+    
+    sl = params.get('sl', '')
+    tp = params.get('tp', '')
+    try:
+        modify_result = Mt5DAO.modify_position_by_ticket(ticket, sl, tp)
+        logger.info(f'Result: {modify_result.to_dict()}')
+        if modify_result is None: 
+            return jsonify({"Modify exit orders was not successful"}), 500
+        return jsonify(modify_result.to_dict()), 200
+    except Exception as e:
+        logger.error(f'Error in modify_exit_orders: {str(e)}')
+        return jsonify({"error": str(e)}), 500 

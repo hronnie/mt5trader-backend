@@ -3,7 +3,6 @@ from flask import Blueprint, request, jsonify, current_app
 from dao.mt5DAO import Mt5DAO
 from service.tradeService import TradeService
 from model.tradeResultModel import TradeResult
-import datetime
 import logging
 
 trade_blueprint = Blueprint('trade_blueprint', __name__)
