@@ -60,7 +60,11 @@ class NewsDAO:
             filtered_news_symbol2 = cls.filter_news_by_date_and_country(news_data, symbol2)
             result = filtered_news_symbol1 + [news for news in filtered_news_symbol2 if news not in filtered_news_symbol1]
         else: 
-            result = news_data
+            result = []
+
+            for item in news_data:
+                news = News(date=item['date'], country=item['country'], title=item['title'], impact=item['impact'])
+                result.append(news)
         
 
         logger.info(f'Result: {result}')
