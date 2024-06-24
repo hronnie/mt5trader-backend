@@ -9,6 +9,18 @@ logger = logging.getLogger('logger_info')
 
 class Mt5DAO:
 
+    @staticmethod
+    def get_raw_spread(symbol_name): 
+        logger.info('-----------------------------------------------------------------')
+        logger.info('Entered get_raw_spread')
+        logger.info('-----------------------------------------------------------------')
+        logger.info(f'Input parameters: symbol_name={symbol_name}')
+        symbol_info_tick_dict = mt5.symbol_info_tick(symbol_name)
+        spread = abs(symbol_info_tick_dict.bid - symbol_info_tick_dict.ask)
+        spread = round(spread, 5)
+        logger.info(f'Spread result: {spread}')
+        return spread
+
     @classmethod
     def getCurrentPriceInfo(cls, symbol_name) -> PriceInfo:
         """
@@ -25,7 +37,7 @@ class Mt5DAO:
         mt5.initialize()
         mt5.symbol_select(symbol_name, True)
         symbol_info_tick_dict = mt5.symbol_info_tick(symbol_name)
-        spread = abs(symbol_info_tick_dict.bid - symbol_info_tick_dict.ask)
+        spread = cls.get_raw_spread(symbol_name)
         point = mt5.symbol_info(symbol_name).point * 10
         spread = spread / point 
         spread_rounded = round(spread, 2)
@@ -33,7 +45,7 @@ class Mt5DAO:
         ask_rounded = round(symbol_info_tick_dict.ask, 5)
         price_info = PriceInfo(bid_rounded, ask_rounded, spread_rounded)
 
-        logger.info(f'Result: {price_info}')
+        logger.info(f'Price info result: {price_info.to_dict()}')
         return price_info
 
     @classmethod
@@ -64,6 +76,8 @@ class Mt5DAO:
         point = mt5.symbol_info(symbol).point
         price_info = cls.getCurrentPriceInfo(symbol)
         entry_price = price_info.askPrice if is_buy else price_info.bidPrice
+        spread_raw = cls.get_raw_spread(symbol)
+        sl_price = sl_price - spread_raw if is_buy else sl_price + spread_raw
 
         action = mt5.SYMBOL_TRADE_EXECUTION_MARKET
         if entry_price_input is not None and entry_price_input != 0:
@@ -139,7 +153,7 @@ class Mt5DAO:
     @classmethod
     def get_pip_diff(cls, symbol_name, entry, exit):
         logger.info('-----------------------------------------------------------------')
-        logger.info('Entered get_exit_price_pip')
+        logger.info('Entered get_pip_diff')
         logger.info('-----------------------------------------------------------------')
         logger.info(f'Input parameters: symbol_name={symbol_name}, entry={entry}, exit={exit}')
         
