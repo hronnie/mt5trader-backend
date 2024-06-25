@@ -43,6 +43,7 @@ def close_position(ticket: int) -> TradeResult:
         logger.error(f'Error in close_position: {str(e)}')
         return jsonify({"error": str(e)}), 500
 
+
 @position_blueprint.route('/position/modify/<int:ticket>', methods=['POST'])
 def modify_exit_orders(ticket: int) -> TradeResult:
     '''Modifies SL and/or TP'''
@@ -65,6 +66,7 @@ def modify_exit_orders(ticket: int) -> TradeResult:
         logger.error(f'Error in modify_exit_orders: {str(e)}')
         return jsonify({"error": str(e)}), 500 
     
+
 @position_blueprint.route('/position/breakeven/<int:ticket>', methods=['POST'])
 def breakeven_position(ticket: int) -> TradeResult:
     '''Breakeven position'''
@@ -87,4 +89,56 @@ def breakeven_position(ticket: int) -> TradeResult:
         return jsonify(modify_result.to_dict()), 200
     except Exception as e:
         logger.error(f'Error in modify_exit_orders: {str(e)}')
+        return jsonify({"error": str(e)}), 500 
+    
+
+@position_blueprint.route('/position/hedge/<int:ticket>', methods=['POST'])
+def hedge_position(ticket: int) -> TradeResult:
+    '''Hedge position'''
+    logger.info('-----------------------------------------------------------------')
+    logger.info('Entered hedge_position')
+    logger.info('-----------------------------------------------------------------')
+    
+    params = request.get_json()
+    logger.info(f'Input parameters: ticket={ticket}, params={params}')
+    
+    sl = params.get('sl', '')
+
+    try:
+        position = Mt5DAO.get_position_by_ticket(ticket)
+        if position is None: 
+            return jsonify({"Couldn't find the position": str(e)}), 404 
+
+        hedge_result = Mt5DAO.create_hedge_position(ticket, sl)
+        logger.info(f'Result: {hedge_result.to_dict()}')
+        if hedge_result is None: 
+            return jsonify({"Creating hedge position was not successful"}), 500
+        return jsonify(hedge_result.to_dict()), 200
+    except Exception as e:
+        logger.error(f'Error in hedge_position: {str(e)}')
+        return jsonify({"error": str(e)}), 500 
+    
+
+@position_blueprint.route('/position/flip/<int:ticket>', methods=['POST'])
+def flip_position(ticket: int) -> TradeResult:
+    '''Flip position side'''
+    logger.info('-----------------------------------------------------------------')
+    logger.info('Entered flip_position')
+    logger.info('-----------------------------------------------------------------')
+    
+    logger.info(f'Input parameters: ticket={ticket}')
+    
+
+    try:
+        position = Mt5DAO.get_position_by_ticket(ticket)
+        if position is None: 
+            return jsonify({"Couldn't find the position": str(e)}), 404 
+
+        flip_result = Mt5DAO.flip_position_side(ticket)
+        logger.info(f'Result: {flip_result.to_dict()}')
+        if flip_result is None: 
+            return jsonify({"Modify exit orders was not successful"}), 500
+        return jsonify(flip_result.to_dict()), 200
+    except Exception as e:
+        logger.error(f'Error in flip_position: {str(e)}')
         return jsonify({"error": str(e)}), 500 
