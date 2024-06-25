@@ -284,6 +284,10 @@ class Mt5DAO:
             return None
         
         position = positions[0]
+        if sl is None or sl == 0: 
+            sl = position.sl
+        if tp is None or tp == 0: 
+            tp = position.tp
         
         # Prepare the modification request
         request = {
@@ -322,3 +326,15 @@ class Mt5DAO:
         logger.info("TradeResult: %s", result_order)
         
         return result_order
+    
+    @classmethod
+    def get_position_by_ticket(cls, ticket_number) -> TradePosition:
+        logger.info('-----------------------------------------------------------------')
+        logger.info('Entered get_position_by_ticket')
+        logger.info('-----------------------------------------------------------------')
+        logger.info(f'Input parameters: ticket={ticket_number}')
+        positions = cls.get_positions()
+        for position in positions:
+            if position.ticket == ticket_number:
+                return position
+        return None

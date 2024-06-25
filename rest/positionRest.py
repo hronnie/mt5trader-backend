@@ -51,12 +51,36 @@ def modify_exit_orders(ticket: int) -> TradeResult:
     logger.info('-----------------------------------------------------------------')
     
     params = request.get_json()
-    logger.info(f'Input parameters: symbol={ticket}, params={params}')
+    logger.info(f'Input parameters: ticket={ticket}, params={params}')
     
     sl = params.get('sl', '')
     tp = params.get('tp', '')
     try:
         modify_result = Mt5DAO.modify_position_by_ticket(ticket, sl, tp)
+        logger.info(f'Result: {modify_result.to_dict()}')
+        if modify_result is None: 
+            return jsonify({"Modify exit orders was not successful"}), 500
+        return jsonify(modify_result.to_dict()), 200
+    except Exception as e:
+        logger.error(f'Error in modify_exit_orders: {str(e)}')
+        return jsonify({"error": str(e)}), 500 
+    
+@position_blueprint.route('/position/breakeven/<int:ticket>', methods=['POST'])
+def breakeven_position(ticket: int) -> TradeResult:
+    '''Breakeven position'''
+    logger.info('-----------------------------------------------------------------')
+    logger.info('Entered breakeven_position')
+    logger.info('-----------------------------------------------------------------')
+    
+    logger.info(f'Input parameters: ticket={ticket}')
+    
+
+    try:
+        position = Mt5DAO.get_position_by_ticket(ticket)
+        if position is None: 
+            return jsonify({"Couldn't find the position": str(e)}), 404 
+
+        modify_result = Mt5DAO.modify_position_by_ticket(ticket, position.price, position.tp)
         logger.info(f'Result: {modify_result.to_dict()}')
         if modify_result is None: 
             return jsonify({"Modify exit orders was not successful"}), 500
