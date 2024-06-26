@@ -1,12 +1,12 @@
 from dao.basePlatformDAO import BasePlatformDAO
-from dao.mt5DAO import Mt5DAO
+from dao.mt5CommonDAO import Mt5CommonDAO
 
 class DAOFactory:
 
     @staticmethod
     def getDAO(platform: str) -> BasePlatformDAO:
         if platform == 'mt5':
-            return Mt5DAO()
+            return Mt5CommonDAO()
         # elif platform == 'ctrader':
         #    return CTraderDAO()
         else:

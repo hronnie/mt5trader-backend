@@ -1,6 +1,5 @@
-import re
 from flask import Blueprint, jsonify, request
-from dao.mt5DAO import Mt5DAO
+from dao.mt5PositionDAO import Mt5PositionDAO
 from model.positionModel import TradePosition
 from model.tradeResultModel import TradeResult
 import logging
@@ -16,7 +15,7 @@ def get_all_position() -> list['TradePosition']:
     logger.info('-----------------------------------------------------------------')
 
     try:
-        positions = Mt5DAO.get_positions()
+        positions = Mt5PositionDAO.get_positions()
         positions_list = [position_item.to_dict() for position_item in positions]
         logger.info(f'Result: {positions_list}')
         return jsonify(positions_list), 200
@@ -34,7 +33,7 @@ def close_position(ticket: int) -> TradeResult:
 
     
     try:
-        close_result = Mt5DAO.close_position_by_ticket(ticket)
+        close_result = Mt5PositionDAO.close_position_by_ticket(ticket)
         logger.info(f'Result: {close_result.to_dict()}')
         if close_result is None: 
             return jsonify({"Close was not successful"}), 500
@@ -57,7 +56,7 @@ def modify_exit_orders(ticket: int) -> TradeResult:
     sl = params.get('sl', '')
     tp = params.get('tp', '')
     try:
-        modify_result = Mt5DAO.modify_position_by_ticket(ticket, sl, tp)
+        modify_result = Mt5PositionDAO.modify_position_by_ticket(ticket, sl, tp)
         logger.info(f'Result: {modify_result.to_dict()}')
         if modify_result is None: 
             return jsonify({"Modify exit orders was not successful"}), 500
@@ -78,11 +77,11 @@ def breakeven_position(ticket: int) -> TradeResult:
     
 
     try:
-        position = Mt5DAO.get_position_by_ticket(ticket)
+        position = Mt5PositionDAO.get_position_by_ticket(ticket)
         if position is None: 
             return jsonify({"Couldn't find the position": str(e)}), 404 
 
-        modify_result = Mt5DAO.modify_position_by_ticket(ticket, position.price, position.tp)
+        modify_result = Mt5PositionDAO.modify_position_by_ticket(ticket, position.price, position.tp)
         logger.info(f'Result: {modify_result.to_dict()}')
         if modify_result is None: 
             return jsonify({"Modify exit orders was not successful"}), 500
@@ -99,17 +98,14 @@ def hedge_position(ticket: int) -> TradeResult:
     logger.info('Entered hedge_position')
     logger.info('-----------------------------------------------------------------')
     
-    params = request.get_json()
-    logger.info(f'Input parameters: ticket={ticket}, params={params}')
+    logger.info(f'Input parameters: ticket={ticket}')
     
-    sl = params.get('sl', '')
-
     try:
-        position = Mt5DAO.get_position_by_ticket(ticket)
+        position = Mt5PositionDAO.get_position_by_ticket(ticket)
         if position is None: 
             return jsonify({"Couldn't find the position": str(e)}), 404 
 
-        hedge_result = Mt5DAO.create_hedge_position(ticket, sl)
+        hedge_result = Mt5PositionDAO.create_hedge_position(ticket)
         logger.info(f'Result: {hedge_result.to_dict()}')
         if hedge_result is None: 
             return jsonify({"Creating hedge position was not successful"}), 500
@@ -130,11 +126,11 @@ def flip_position(ticket: int) -> TradeResult:
     
 
     try:
-        position = Mt5DAO.get_position_by_ticket(ticket)
+        position = Mt5PositionDAO.get_position_by_ticket(ticket)
         if position is None: 
             return jsonify({"Couldn't find the position": str(e)}), 404 
 
-        flip_result = Mt5DAO.flip_position_side(ticket)
+        flip_result = Mt5PositionDAO.flip_position_side(ticket)
         logger.info(f'Result: {flip_result.to_dict()}')
         if flip_result is None: 
             return jsonify({"Modify exit orders was not successful"}), 500

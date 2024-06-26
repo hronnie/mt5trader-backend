@@ -1,7 +1,7 @@
 import logging
-from flask import Blueprint, request, jsonify, current_app
-import re
+from flask import Blueprint, jsonify
 from dao.platformDAOFactory import DAOFactory
+from dao.mt5CommonDAO import Mt5CommonDAO
 
 # Set up the logger
 logger = logging.getLogger('logger_info')
@@ -16,8 +16,7 @@ def get_symbol_news(symbol: str, platform='mt5'):
     logger.info('-----------------------------------------------------------------')
     
     try:
-        price_dao = DAOFactory.getDAO(platform)
-        price_info = price_dao.getCurrentPriceInfo(symbol)
+        price_info = Mt5CommonDAO.getCurrentPriceInfo(symbol)
         logger.info(f"Successfully retrieved price info for symbol: {symbol}, price: {price_info.to_dict()}")
         return jsonify(price_info.to_dict()), 200
     except Exception as e:

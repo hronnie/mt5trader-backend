@@ -1,6 +1,6 @@
 import re
 from flask import Blueprint, request, jsonify, current_app
-from dao.mt5DAO import Mt5DAO
+from dao.mt5CommonDAO import Mt5CommonDAO
 from service.tradeService import TradeService
 from model.tradeResultModel import TradeResult
 import logging
@@ -25,7 +25,7 @@ def trade(symbol: str, params, is_long: str) -> TradeResult:
     risk = params.get('risk', )
     
     try:
-        price_info = Mt5DAO.getCurrentPriceInfo(symbol)
+        price_info = Mt5CommonDAO.getCurrentPriceInfo(symbol)
         if price_info.spread > spread: 
             trade_result = TradeResult(
                 executionDate=None,

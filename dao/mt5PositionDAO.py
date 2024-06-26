@@ -1,190 +1,44 @@
 import logging
-from model.priceInfoModel import PriceInfo
 import MetaTrader5 as mt5
 from model.tradeResultModel import TradeResult
 from model.positionModel import TradePosition
 from datetime import datetime
+from dao.mt5CommonDAO import Mt5CommonDAO
 
 logger = logging.getLogger('logger_info')
 
-class Mt5DAO:
-
-    @staticmethod
-    def get_raw_spread(symbol_name): 
-        logger.info('-----------------------------------------------------------------')
-        logger.info('Entered get_raw_spread')
-        logger.info('-----------------------------------------------------------------')
-        logger.info(f'Input parameters: symbol_name={symbol_name}')
-        symbol_info_tick_dict = mt5.symbol_info_tick(symbol_name)
-        spread = abs(symbol_info_tick_dict.bid - symbol_info_tick_dict.ask)
-        spread = round(spread, 5)
-        logger.info(f'Spread result: {spread}')
-        return spread
-
+class Mt5PositionDAO:
     @classmethod
-    def getCurrentPriceInfo(cls, symbol_name) -> PriceInfo:
-        """
-        Fetches the current price of the given symbol.
-        
-        :param symbol: The ticker symbol of the asset to fetch the current price for.
-        :return: The current price of the asset, or None if not found.
-        """
-        logger.info('-----------------------------------------------------------------')
-        logger.info('Entered getCurrentPriceInfo')
-        logger.info('-----------------------------------------------------------------')
-        logger.info(f'Input parameters: symbol_name={symbol_name}')
-        
-        mt5.initialize()
-        mt5.symbol_select(symbol_name, True)
-        symbol_info_tick_dict = mt5.symbol_info_tick(symbol_name)
-        spread = cls.get_raw_spread(symbol_name)
-        point = mt5.symbol_info(symbol_name).point * 10
-        spread = spread / point 
-        spread_rounded = round(spread, 2)
-        bid_rounded = round(symbol_info_tick_dict.bid, 5)
-        ask_rounded = round(symbol_info_tick_dict.ask, 5)
-        price_info = PriceInfo(bid_rounded, ask_rounded, spread_rounded)
-
-        logger.info(f'Price info result: {price_info.to_dict()}')
-        return price_info
-
-    @classmethod
-    def getAccountBalance(cls) -> float:
-        """
-        Gets current account balance
-        """
-        logger.info('-----------------------------------------------------------------')
-        logger.info('Entered getAccountBalance')
-        logger.info('-----------------------------------------------------------------')
-        
-        mt5.initialize()
-        account = mt5.account_info()
-        balance = account.balance
-
-        logger.info(f'Result: {balance}')
-        return balance
-    
-    @classmethod
-    def create_mt5_order(cls, lot_size, symbol, is_buy: bool, sl_price, ratio, entry_price_input=None, tp_price_input=None) -> TradeResult:
-        logger.info('-----------------------------------------------------------------')
-        logger.info('Entered create_mt5_order')
-        logger.info('-----------------------------------------------------------------')
-        logger.info(f'Input parameters: lot_size={lot_size}, symbol={symbol}, is_buy={is_buy}, sl_price={sl_price}, ratio={ratio}, entry_price_input={entry_price_input}, tp_price_input={tp_price_input}')
-        
-        mt5.initialize()
-
-        point = mt5.symbol_info(symbol).point
-        price_info = cls.getCurrentPriceInfo(symbol)
-        entry_price = price_info.askPrice if is_buy else price_info.bidPrice
-        spread_raw = cls.get_raw_spread(symbol)
-        sl_price = sl_price - spread_raw if is_buy else sl_price + spread_raw
-
-        action = mt5.SYMBOL_TRADE_EXECUTION_MARKET
-        if entry_price_input is not None and entry_price_input != 0:
-            entry_price = entry_price_input
-            action = mt5.TRADE_ACTION_PENDING
-        
-        one_pip = 10 * point
-        sl_pips = abs(sl_price - entry_price) / one_pip
-        sl_pips = round(sl_pips, 2)
-
-        tp_price = None
-        type = None
-        if is_buy:
-            type = mt5.ORDER_TYPE_BUY
-            tp_price = entry_price + sl_pips * one_pip * ratio
-        else: 
-            type = mt5.ORDER_TYPE_SELL
-            tp_price = entry_price - sl_pips * one_pip * ratio
-
-        if tp_price_input is not None and tp_price_input != 0: 
-            tp_price = tp_price_input
-
-        if is_buy and entry_price_input is not None and entry_price_input != 0:
-            if entry_price > price_info.bidPrice: 
-                type = mt5.ORDER_TYPE_BUY_STOP_LIMIT
-            else:     
-                type = mt5.ORDER_TYPE_BUY_LIMIT
-        if not is_buy and entry_price_input is not None and entry_price_input != 0: 
-            if entry_price < price_info.askPrice: 
-                type = mt5.ORDER_TYPE_SELL_STOP_LIMIT
-            else:     
-                type = mt5.ORDER_TYPE_SELL_LIMIT
-
-
-        result = cls.order_send_to_mt5(action, symbol, lot_size, type, entry_price, sl_price, tp_price, "NORMAL")
-        result_order = TradeResult(
-            executionDate=datetime.now(),
-            volume=lot_size,  
-            entryPrice=entry_price,
-            comment=result.comment,
-            symbol=symbol,
-            slPrice=sl_price,
-            tpPrice=tp_price,
-            moneyAtRisk=None, 
-            tpPipValue=None,  
-            slPipValue=None, 
-            spread=cls.get_pip_diff(symbol, result.ask, result.bid)
-        )
-
-        logger.info("Order creation result: %s", result)
-        logger.info("TradeResult: %s", result_order)
-
-        return result_order
-    
-    @classmethod
-    def order_send_to_mt5(cls, action, symbol, lot_size, order_type, entry_price, sl_price, tp_price, comment):
-        logger.info('-----------------------------------------------------------------')
-        logger.info('Entered order_send_to_mt5')
-        logger.info('-----------------------------------------------------------------')
-        logger.info(f'Input parameters: action={action}, symbol={symbol}, lot_size={lot_size}, sl_price={sl_price}, entry_price={entry_price}, order_type={order_type}, tp_price={tp_price}, comment={comment}')
-        
-        mt5.initialize()
-        request = {
-            "action": action,
-            "symbol": symbol,
-            "volume": lot_size,
-            "type": order_type,
-            "price": entry_price,
-            "stoplimit": entry_price,
-            "sl": sl_price,
-            "tp": tp_price,
-            "deviation": 20,
-            "comment": comment,
-            "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_IOC,
-        }
-
-        logger.info(f'Order request: {request}')
-
-        result = mt5.order_send(request)
-        return result
-
-    @classmethod
-    def create_hedge_position(cls, ticket, sl):
+    def create_hedge_position(cls, ticket):
         logger.info('-----------------------------------------------------------------')
         logger.info('Entered create_hedge_position')
         logger.info('-----------------------------------------------------------------')
-        logger.info(f'Input parameters: ticket={ticket}, SL={sl}')
+        logger.info(f'Input parameters: ticket={ticket}')
         
         mt5.initialize()    
         position = cls.get_position_by_ticket(ticket)
         position_dict = position.to_dict()
         type = mt5.ORDER_TYPE_SELL if "Buy" in position_dict['type'] else mt5.ORDER_TYPE_BUY
         action = mt5.SYMBOL_TRADE_EXECUTION_MARKET
-        result = cls.order_send_to_mt5(action, position.symbol, position.volume, type, position.current_price, sl, position.sl, "HEDGE")
+
+        sl_diff = abs(position.price - position.sl)
+        new_sl = position.current_price - sl_diff if "Sell" in position_dict['type'] else position.current_price + sl_diff
+        new_tp = position.sl
+
+        result = Mt5CommonDAO.order_send_to_mt5(action, position.symbol, position.volume, type, position.current_price, new_sl, new_tp, "HEDGE")
+
         result_order = TradeResult(
             executionDate=datetime.now(),
             volume=position.volume,  
             entryPrice=position.current_price,
             comment=result.comment,
             symbol=position.symbol,
-            slPrice=sl,
-            tpPrice=position.sl,
+            slPrice=new_sl,
+            tpPrice=new_tp,
             moneyAtRisk=None, 
             tpPipValue=None,  
             slPipValue=None, 
-            spread=cls.get_pip_diff(position.symbol, result.ask, result.bid)
+            spread=Mt5CommonDAO.get_pip_diff(position.symbol, result.ask, result.bid)
         )
 
         logger.info("Hedge Order creation result: %s", result)
@@ -204,6 +58,7 @@ class Mt5DAO:
         position_dict = position.to_dict()
         type = mt5.ORDER_TYPE_SELL if "Buy" in position_dict['type'] else mt5.ORDER_TYPE_BUY
         action = mt5.SYMBOL_TRADE_EXECUTION_MARKET
+        
         # cancel original position
         close_position_result = cls.close_position_by_ticket(ticket)
         if close_position_result.comment != "Request executed": 
@@ -215,7 +70,7 @@ class Mt5DAO:
         new_sl = position.current_price - sl_diff if "Sell" in position_dict['type'] else position.current_price + sl_diff
         new_tp = position.current_price + tp_diff if "Sell" in position_dict['type'] else position.current_price - tp_diff
 
-        result = cls.order_send_to_mt5(action, position.symbol, position.volume, type, position.current_price, new_sl, new_tp, "FLIP")
+        result = Mt5CommonDAO.order_send_to_mt5(action, position.symbol, position.volume, type, position.current_price, new_sl, new_tp, "FLIP")
         result_order = TradeResult(
             executionDate=datetime.now(),
             volume=position.volume,  
@@ -227,7 +82,7 @@ class Mt5DAO:
             moneyAtRisk=None, 
             tpPipValue=None,  
             slPipValue=None, 
-            spread=cls.get_pip_diff(position.symbol, result.ask, result.bid)
+            spread=Mt5CommonDAO.get_pip_diff(position.symbol, result.ask, result.bid)
         )
 
         logger.info("Flip Order creation result: %s", result)
@@ -236,31 +91,11 @@ class Mt5DAO:
         return result_order   
 
     @classmethod
-    def get_pip_diff(cls, symbol_name, entry, exit):
-        logger.info('-----------------------------------------------------------------')
-        logger.info('Entered get_pip_diff')
-        logger.info('-----------------------------------------------------------------')
-        logger.info(f'Input parameters: symbol_name={symbol_name}, entry={entry}, exit={exit}')
-        
-        mt5.initialize()
-        point = mt5.symbol_info(symbol_name).point * 10
-        
-        diff = abs(exit - entry)
-        result = round(diff / point, 2)
-
-        logger.info(f'point: {point}, diff: {diff}, result: {result}')
-        return result
-    
-    @staticmethod
-    def convert_time(mt5_time):
-        return datetime.fromtimestamp(mt5_time).strftime('%Y.%m.%d %H:%M:%S')
-
-
-    @classmethod
     def get_positions(cls) -> list['TradePosition']:
         logger.info('-----------------------------------------------------------------')
         logger.info('Entered get_positions')
         logger.info('-----------------------------------------------------------------')
+
         positions_list = []
         mt5.initialize()
         positions = mt5.positions_get()
@@ -272,7 +107,7 @@ class Mt5DAO:
                 position = TradePosition(
                     symbol=positionItem.symbol,
                     ticket=positionItem.ticket,
-                    time=cls.convert_time(positionItem.time),
+                    time=Mt5CommonDAO.convert_time(positionItem.time),
                     type=positionItem.type,
                     volume=positionItem.volume,
                     price=positionItem.price_open,
@@ -294,7 +129,6 @@ class Mt5DAO:
         
         mt5.initialize()
         
-        # Retrieve the position to close
         positions = mt5.positions_get(ticket=ticket)
         
         if positions is None or len(positions) == 0:
@@ -303,13 +137,11 @@ class Mt5DAO:
         
         position = positions[0]
         
-        # Determine close order parameters
         symbol = position.symbol
         volume = position.volume
         order_type = mt5.ORDER_TYPE_SELL if position.type == mt5.ORDER_TYPE_BUY else mt5.ORDER_TYPE_BUY
         price = mt5.symbol_info_tick(symbol).bid if position.type == mt5.ORDER_TYPE_BUY else mt5.symbol_info_tick(symbol).ask
         
-        # Prepare the close request
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
             "symbol": symbol,
@@ -326,14 +158,12 @@ class Mt5DAO:
         
         logger.info(f'Close request: {request}')
         
-        # Send the close request
         result = mt5.order_send(request)
         
         if result.retcode != mt5.TRADE_RETCODE_DONE:
             logger.info(f"Failed to close position, retcode={result.retcode}")
             return None
         
-        # Create TradeResult for the closed position
         result_order = TradeResult(
             executionDate=datetime.now(),
             volume=volume,
@@ -345,7 +175,7 @@ class Mt5DAO:
             moneyAtRisk=None,
             tpPipValue=None,
             slPipValue=None,
-            spread=cls.get_pip_diff(symbol, result.price, position.price_open)
+            spread=Mt5CommonDAO.get_pip_diff(symbol, result.price, position.price_open)
         )
         
         logger.info("Close position result: %s", result)
@@ -385,14 +215,12 @@ class Mt5DAO:
         
         logger.info(f'Modify request: {request}')
         
-        # Send the modification request
         result = mt5.order_send(request)
         
         if result.retcode != mt5.TRADE_RETCODE_DONE:
             logger.info(f"Failed to modify position, retcode={result.retcode}")
             return None
         
-        # Create TradeResult for the modified position
         result_order = TradeResult(
             executionDate=datetime.now(),
             volume=position.volume,
@@ -413,13 +241,13 @@ class Mt5DAO:
         return result_order
     
     @classmethod
-    def get_position_by_ticket(cls, ticket_number) -> TradePosition:
+    def get_position_by_ticket(cls, ticket) -> TradePosition:
         logger.info('-----------------------------------------------------------------')
         logger.info('Entered get_position_by_ticket')
         logger.info('-----------------------------------------------------------------')
-        logger.info(f'Input parameters: ticket={ticket_number}')
+        logger.info(f'Input parameters: ticket={ticket}')
         positions = cls.get_positions()
         for position in positions:
-            if position.ticket == ticket_number:
+            if position.ticket == ticket:
                 return position
         return None

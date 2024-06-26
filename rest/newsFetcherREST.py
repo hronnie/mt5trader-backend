@@ -1,5 +1,4 @@
-import re
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, jsonify
 from dao.newsDAO import NewsDAO
 import logging
 

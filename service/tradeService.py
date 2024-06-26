@@ -1,7 +1,7 @@
 import logging
 from model.tradeResultModel import TradeResult
-import datetime
-from dao.mt5DAO import Mt5DAO
+from dao.mt5CommonDAO import Mt5CommonDAO
+from dao.mt5TradeDAO import Mt5TradeDAO
 
 logger = logging.getLogger('trade_service')
 
@@ -23,11 +23,11 @@ class TradeService:
         
         logger.info(f'Volume {volume}, Change per pip: {change_per_pip}, Money at risk: {money_at_risk}')
         
-        order_result = Mt5DAO.create_mt5_order(volume, symbolName, is_long, slPrice, ratio, entryPrice, tpPrice)
+        order_result = Mt5TradeDAO.create_mt5_order(volume, symbolName, is_long, slPrice, ratio, entryPrice, tpPrice)
         logger.info(f'Order result: {order_result}')
         
-        tp_pip = Mt5DAO.get_pip_diff(symbolName, order_result.entryPrice, order_result.tpPrice)
-        sl_pip = Mt5DAO.get_pip_diff(symbolName, order_result.entryPrice, order_result.slPrice)
+        tp_pip = Mt5CommonDAO.get_pip_diff(symbolName, order_result.entryPrice, order_result.tpPrice)
+        sl_pip = Mt5CommonDAO.get_pip_diff(symbolName, order_result.entryPrice, order_result.slPrice)
 
         order_result.tpPipValue = tp_pip
         order_result.slPipValue = sl_pip
@@ -45,7 +45,7 @@ class TradeService:
         logger.info('-----------------------------------------------------------------')
         logger.info(f'Input parameters: risk_percentage={risk_percentage}, stop_loss={stop_loss}, symbol={symbol}, is_buy_input={is_buy_input}')
         
-        account_balance = Mt5DAO.getAccountBalance()
+        account_balance = Mt5CommonDAO.getAccountBalance()
         logger.info(f'Account balance: {account_balance}')
         
         contract_size = 0
@@ -56,7 +56,7 @@ class TradeService:
             pip_size = 0.01 if "JPY" in symbol else 0.0001
             contract_size = 100000  
         
-        price_info = Mt5DAO.getCurrentPriceInfo(symbol)
+        price_info = Mt5CommonDAO.getCurrentPriceInfo(symbol)
         logger.info(f'Price info: {price_info}')
         
         eur_conv_price = None

@@ -1,0 +1,121 @@
+import logging
+from model.priceInfoModel import PriceInfo
+import MetaTrader5 as mt5
+from datetime import datetime
+
+logger = logging.getLogger('logger_info')
+
+class Mt5CommonDAO:
+
+    @staticmethod
+    def get_raw_spread(symbol): 
+        logger.info('-----------------------------------------------------------------')
+        logger.info('Entered get_raw_spread')
+        logger.info('-----------------------------------------------------------------')
+        logger.info(f'Input parameters: symbol_name={symbol}')
+
+        symbol_info_tick_dict = mt5.symbol_info_tick(symbol)
+        spread = abs(symbol_info_tick_dict.bid - symbol_info_tick_dict.ask)
+        spread = round(spread, 5)
+        logger.info(f'Spread result: {spread}')
+        return spread
+    
+    @classmethod
+    def get_pip_diff(cls, symbol_name, entry, exit):
+        """
+        Gets the number of pips between 2 prices
+        """
+        logger.info('-----------------------------------------------------------------')
+        logger.info('Entered get_pip_diff')
+        logger.info('-----------------------------------------------------------------')
+        logger.info(f'Input parameters: symbol_name={symbol_name}, entry={entry}, exit={exit}')
+        
+        mt5.initialize()
+        point = mt5.symbol_info(symbol_name).point * 10
+        
+        diff = abs(exit - entry)
+        result = round(diff / point, 2)
+
+        logger.info(f'point: {point}, diff: {diff}, result: {result}')
+        return result
+
+    @classmethod
+    def getCurrentPriceInfo(cls, symbol_name) -> PriceInfo:
+        """
+        Fetches the current price of the given symbol.
+        
+        :param symbol: The ticker symbol of the asset to fetch the current price for.
+        :return: The current price of the asset, or None if not found.
+        """
+        logger.info('-----------------------------------------------------------------')
+        logger.info('Entered getCurrentPriceInfo')
+        logger.info('-----------------------------------------------------------------')
+        logger.info(f'Input parameters: symbol_name={symbol_name}')
+        
+        mt5.initialize()
+        mt5.symbol_select(symbol_name, True)
+        
+        symbol_info_tick_dict = mt5.symbol_info_tick(symbol_name)
+        spread = cls.get_raw_spread(symbol_name)
+        point = mt5.symbol_info(symbol_name).point * 10
+        spread = spread / point 
+        spread_rounded = round(spread, 2)
+        bid_rounded = round(symbol_info_tick_dict.bid, 5)
+        ask_rounded = round(symbol_info_tick_dict.ask, 5)
+        price_info = PriceInfo(bid_rounded, ask_rounded, spread_rounded)
+
+        logger.info(f'Price info result: {price_info.to_dict()}')
+        return price_info
+
+    @classmethod
+    def getAccountBalance(cls) -> float:
+        """
+        Gets current account balance
+        """
+        logger.info('-----------------------------------------------------------------')
+        logger.info('Entered getAccountBalance')
+        logger.info('-----------------------------------------------------------------')
+        
+        mt5.initialize()
+        account = mt5.account_info()
+        balance = account.balance
+
+        logger.info(f'Result: {balance}')
+        return balance 
+    
+    
+    @classmethod
+    def order_send_to_mt5(cls, action, symbol, lot_size, order_type, entry_price, sl_price, tp_price, comment):
+        logger.info('-----------------------------------------------------------------')
+        logger.info('Entered order_send_to_mt5')
+        logger.info('-----------------------------------------------------------------')
+        logger.info(f'Input parameters: action={action}, symbol={symbol}, lot_size={lot_size}, sl_price={sl_price}, entry_price={entry_price}, order_type={order_type}, tp_price={tp_price}, comment={comment}')
+        
+        mt5.initialize()
+        request = {
+            "action": action,
+            "symbol": symbol,
+            "volume": lot_size,
+            "type": order_type,
+            "price": entry_price,
+            "stoplimit": entry_price,
+            "sl": sl_price,
+            "tp": tp_price,
+            "deviation": 20,
+            "comment": comment,
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+
+        logger.info(f'Order request: {request}')
+
+        result = mt5.order_send(request)
+        return result
+
+    
+    @staticmethod
+    def convert_time(mt5_time):
+        return datetime.fromtimestamp(mt5_time).strftime('%Y.%m.%d %H:%M:%S')
+
+
+    
