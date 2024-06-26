@@ -93,9 +93,9 @@ class Mt5PositionDAO:
         return result_order   
 
     @classmethod
-    def get_positions(cls) -> list['TradePosition']:
+    def get_all_position(cls) -> list['TradePosition']:
         logger.info('-----------------------------------------------------------------')
-        logger.info('Entered get_positions')
+        logger.info('Entered get_all_position')
         logger.info('-----------------------------------------------------------------')
 
         positions_list = []
@@ -120,6 +120,10 @@ class Mt5PositionDAO:
                 )
                 positions_list.append(position)
         
+        logger.info("result: ")
+        for position_item in positions_list: 
+            logger.info(position_item.to_dict())
+
         return positions_list
                 
     @classmethod
@@ -193,7 +197,7 @@ class Mt5PositionDAO:
         
         mt5.initialize()
         
-        positions = cls.get_positions()
+        positions = cls.get_all_position()
         for position in positions:
             cls.close_position_by_ticket(position.ticket)    
         
@@ -262,7 +266,7 @@ class Mt5PositionDAO:
         logger.info('Entered get_position_by_ticket')
         logger.info('-----------------------------------------------------------------')
         logger.info(f'Input parameters: ticket={ticket}')
-        positions = cls.get_positions()
+        positions = cls.get_all_position()
         for position in positions:
             if position.ticket == ticket:
                 return position

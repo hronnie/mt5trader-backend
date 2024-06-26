@@ -15,7 +15,7 @@ def get_all_position() -> list['TradePosition']:
     logger.info('-----------------------------------------------------------------')
 
     try:
-        positions = Mt5PositionDAO.get_positions()
+        positions = Mt5PositionDAO.get_all_position()
         positions_list = [position_item.to_dict() for position_item in positions]
         logger.info(f'Result: {positions_list}')
         return jsonify(positions_list), 200
@@ -34,9 +34,9 @@ def close_position(ticket: int) -> TradeResult:
     
     try:
         close_result = Mt5PositionDAO.close_position_by_ticket(ticket)
-        logger.info(f'Result: {close_result.to_dict()}')
         if close_result is None: 
             return jsonify({"Close was not successful"}), 500
+        logger.info(f'Result: {close_result.to_dict()}')
         return jsonify(close_result.to_dict()), 200
     except Exception as e:
         logger.error(f'Error in close_position: {str(e)}')
@@ -148,7 +148,7 @@ def close_all_position() -> TradeResult:
 
     try:
         Mt5PositionDAO.close_all_position()
-        return jsonify({"comment": "success"}), 200
+        return jsonify({"comment": "Request executed"}), 200
     except Exception as e:
         logger.error(f'Error in close_all_position: {str(e)}')
         return jsonify({"comment": str(e)}), 500 
