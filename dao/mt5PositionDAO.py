@@ -21,7 +21,7 @@ class Mt5PositionDAO:
         type = mt5.ORDER_TYPE_SELL if "Buy" in position_dict['type'] else mt5.ORDER_TYPE_BUY
         action = mt5.SYMBOL_TRADE_EXECUTION_MARKET
 
-        sl_diff = abs(position.price - position.sl)
+        sl_diff = abs(position.entry_price - position.sl)
         new_sl = position.current_price - sl_diff if "Sell" in position_dict['type'] else position.current_price + sl_diff
         new_tp = position.sl
 
@@ -63,11 +63,11 @@ class Mt5PositionDAO:
         
         # cancel original position
         close_position_result = cls.close_position_by_ticket(ticket)
-        if close_position_result.comment != "Request executed": 
+        if close_position_result is None or close_position_result.comment != "Request executed": 
             return None
 
         # create new flipped position
-        sl_diff = abs(position.price - position.sl)
+        sl_diff = abs(position.entry_price - position.sl)
         tp_diff = sl_diff * 3
         new_sl = position.current_price - sl_diff if "Sell" in position_dict['type'] else position.current_price + sl_diff
         new_tp = position.current_price + tp_diff if "Sell" in position_dict['type'] else position.current_price - tp_diff

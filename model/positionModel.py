@@ -17,7 +17,7 @@ class TradePosition:
         self.time = time
         self.type = type
         self.volume = volume
-        self.price = price
+        self.entry_price = price
         self.sl = sl
         self.tp = tp
         self.current_price = current_price
@@ -30,7 +30,7 @@ class TradePosition:
             'time': self.time,
             'type': self.get_order_type(self.type),
             'volume': self.volume,
-            'price': self.price,
+            'price': self.entry_price,
             'sl': self.sl,
             'tp': self.tp,
             'current_price': self.current_price,

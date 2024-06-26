@@ -81,7 +81,7 @@ def breakeven_position(ticket: int) -> TradeResult:
         if position is None: 
             return jsonify({"Couldn't find the position": str(e)}), 404 
 
-        modify_result = Mt5PositionDAO.modify_position_by_ticket(ticket, position.price, position.tp)
+        modify_result = Mt5PositionDAO.modify_position_by_ticket(ticket, position.entry_price, position.tp)
         logger.info(f'Result: {modify_result.to_dict()}')
         if modify_result is None: 
             return jsonify({"Modify exit orders was not successful"}), 500
