@@ -148,7 +148,7 @@ def close_all_position() -> TradeResult:
 
     try:
         Mt5PositionDAO.close_all_position()
-        return jsonify({"result": "success"}), 200
+        return jsonify({"comment": "success"}), 200
     except Exception as e:
         logger.error(f'Error in close_all_position: {str(e)}')
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"comment": str(e)}), 500 

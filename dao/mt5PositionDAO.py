@@ -25,6 +25,8 @@ class Mt5PositionDAO:
         new_sl = position.current_price - sl_diff if "Sell" in position_dict['type'] else position.current_price + sl_diff
         new_tp = position.sl
 
+        logger.info(f"Creating hedge position with the following parameters: action={action}, symbol={position.symbol}, type={type}, entry_price={position.current_price},sl={new_sl}, tp={new_tp} ")
+
         result = Mt5CommonDAO.order_send_to_mt5(action, position.symbol, position.volume, type, position.current_price, new_sl, new_tp, "HEDGE")
 
         result_order = TradeResult(
