@@ -138,3 +138,17 @@ def flip_position(ticket: int) -> TradeResult:
     except Exception as e:
         logger.error(f'Error in flip_position: {str(e)}')
         return jsonify({"error": str(e)}), 500 
+    
+@position_blueprint.route('/position/closeall', methods=['POST'])
+def close_all_position() -> TradeResult:
+    '''Closes all position'''
+    logger.info('-----------------------------------------------------------------')
+    logger.info('Entered close_all_position')
+    logger.info('-----------------------------------------------------------------')  
+
+    try:
+        Mt5PositionDAO.close_all_position()
+        return jsonify({"result": "success"}), 200
+    except Exception as e:
+        logger.error(f'Error in close_all_position: {str(e)}')
+        return jsonify({"error": str(e)}), 500 

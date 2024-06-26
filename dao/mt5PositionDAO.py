@@ -184,6 +184,20 @@ class Mt5PositionDAO:
         return result_order    
     
     @classmethod
+    def close_all_position(cls):
+        logger.info('-----------------------------------------------------------------')
+        logger.info('Entered close_all_position')
+        logger.info('-----------------------------------------------------------------')
+        
+        mt5.initialize()
+        
+        positions = cls.get_positions()
+        for position in positions:
+            cls.close_position_by_ticket(position.ticket)    
+        
+        return "Success"
+    
+    @classmethod
     def modify_position_by_ticket(cls, ticket: int, sl: float, tp: float) -> TradeResult:
         logger.info('-----------------------------------------------------------------')
         logger.info('Entered modify_position_by_ticket')
