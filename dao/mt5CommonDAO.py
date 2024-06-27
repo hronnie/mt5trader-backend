@@ -2,6 +2,7 @@ import logging
 from model.priceInfoModel import PriceInfo
 import MetaTrader5 as mt5
 from datetime import datetime
+import pandas as pd
 
 logger = logging.getLogger('logger_info')
 
@@ -54,7 +55,7 @@ class Mt5CommonDAO:
         
         mt5.initialize()
         mt5.symbol_select(symbol_name, True)
-        
+
         symbol_info_tick_dict = mt5.symbol_info_tick(symbol_name)
         spread = cls.get_raw_spread(symbol_name)
         point = mt5.symbol_info(symbol_name).point * 10
@@ -116,6 +117,59 @@ class Mt5CommonDAO:
     @staticmethod
     def convert_time(mt5_time):
         return datetime.fromtimestamp(mt5_time).strftime('%Y.%m.%d %H:%M:%S')
+    
+    @staticmethod
+    def get_atr(symbol):
+        logger.info('Calculating ATR...')
+        logger.info(f'Input parameters: symbol={symbol}')
+
+        atr_period = 14
+        period = 100 
+        timeframe=mt5.TIMEFRAME_M1
+        
+        rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, period + atr_period)
+        df = pd.DataFrame(rates)
+        df['tr1'] = df['high'] - df['low']
+        df['tr2'] = (df['high'] - df['close'].shift(1)).abs()
+        df['tr3'] = (df['low'] - df['close'].shift(1)).abs()
+        df['tr'] = df[['tr1', 'tr2', 'tr3']].max(axis=1)
+        df['atr'] = df['tr'].rolling(window=atr_period).mean()
+        atr_value = df['atr'].iloc[-1]
+        
+        logger.info(f'ATR value calculated: {atr_value}')
+        return atr_value
+
+    @classmethod
+    def calculate_new_sl_tp(cls, position): 
+        position_dict = position.to_dict()
+        
+        atr_value = cls.get_atr(position.symbol)
+        atr_multiplier = 3  
+
+        pip_size = 0.0001 if 'JPY' not in position.symbol else 0.01
+        atr_pips = atr_value / pip_size
+
+
+        sl_diff_position = abs(position.entry_price - position.sl)
+        new_sl_position = position.current_price - sl_diff_position if "Sell" in position_dict['type'] else position.current_price + sl_diff_position
+        new_tp_position = position.sl
+
+        sl_diff_atr = atr_pips * atr_multiplier * pip_size
+        new_sl_atr = position.current_price - sl_diff_atr if "Sell" in position_dict['type'] else position.current_price + sl_diff_atr
+        new_tp_atr = position.current_price + sl_diff_atr * 3 if "Sell" in position_dict['type'] else position.current_price - sl_diff_atr * 3
+
+        logger.info(f"SL/TP values: sl_diff_position: {sl_diff_position}, new_sl_position: {new_sl_position}, new_tp_position: {new_tp_position}")
+        logger.info(f"ATR values: sl_diff_atr: {sl_diff_atr}, new_sl_atr: {new_sl_atr}, new_tp_atr: {new_tp_atr}")
+
+
+        if sl_diff_position < sl_diff_atr: 
+            new_sl = new_sl_atr
+            new_tp = new_tp_atr
+        else: 
+            new_sl = new_sl_position
+            new_tp = new_tp_position    
+        
+        return new_sl, new_tp
 
 
     
