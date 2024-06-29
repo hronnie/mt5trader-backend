@@ -5,6 +5,7 @@ from rest.newsFetcherREST import news_fetcher_blueprint
 from rest.priceInfoREST import price_info_blueprint
 from rest.tradeREST import trade_blueprint
 from rest.positionRest import position_blueprint
+from rest.historyRest import history_blueprint
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -45,6 +46,7 @@ app.register_blueprint(news_fetcher_blueprint, url_prefix='/api')
 app.register_blueprint(price_info_blueprint, url_prefix='/api')
 app.register_blueprint(trade_blueprint, url_prefix='/api')
 app.register_blueprint(position_blueprint, url_prefix='/api')
+app.register_blueprint(history_blueprint, url_prefix='/api')
 
 
 if __name__ == "__main__":

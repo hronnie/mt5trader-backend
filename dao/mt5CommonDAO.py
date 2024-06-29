@@ -172,4 +172,17 @@ class Mt5CommonDAO:
         return new_sl, new_tp
 
 
+
+    @classmethod
+    def get_sl_tp_from_order(cls, history_orders, ticket):
+        if history_orders is None:
+            return None, None
+        
+        for item in history_orders:
+            if ticket == item.ticket:
+                return item.sl, item.tp
+        
+        # If ticket is not found in history_orders
+        return None, None
     
+
